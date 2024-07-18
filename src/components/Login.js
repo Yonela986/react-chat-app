@@ -2,6 +2,7 @@ import React from 'react';
 import { getAuth, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Container, Button } from 'react-bootstrap';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -25,10 +26,12 @@ const Login = () => {
   }
 
   return (
-    <div>
-      <h1>Login</h1>
-      <button onClick={handleGoogleLogin}>Sign in with Google</button>
-    </div>
+    <Container className="d-flex flex-column align-items-center justify-content-center mt-5">
+    <h1 className="mb-4">Login</h1>
+    <Button variant="primary" onClick={handleGoogleLogin} className="w-100">
+      Sign in with Google
+    </Button>
+  </Container>
   );
 };
 
