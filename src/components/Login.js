@@ -1,36 +1,51 @@
-import React from 'react';
-import { getAuth, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
+import React, { useState } from 'react';
+// import { getAuth, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Container, Button } from 'react-bootstrap';
+import { Container, Form } from 'react-bootstrap';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const handleGoogleLogin = async () => {
-    const auth = getAuth();
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithRedirect(auth, provider);
-      
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
+  const handleSubmit = async () => {
+    // eslint-disable-next-line no-undef
+    e.preventDefault()
+    const success = await login(email, password);
+    if(success){
+      navigate('/');
+    }else{
+      alert('Login failed. Please check your credentials.')
     }
   };
 
-  // If user is already logged in, redirect to chat room
-  if (user) {
-    navigate('/');
-    return null;
-  }
+  // // If user is already logged in, redirect to chat room
+  // if (user) {
+  //   navigate('/');
+  //   return null;
+  // }
 
   return (
     <Container className="d-flex flex-column align-items-center justify-content-center mt-5">
     <h1 className="mb-4">Login</h1>
-    <Button variant="primary" onClick={handleGoogleLogin} className="w-100">
-      Sign in with Google
-    </Button>
+    <Form variant="primary" onSubmit={handleSubmit} className="w-100">
+    <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+        required
+      />
+      <button type="submit">Login</button>
+    </Form>
   </Container>
   );
 };
