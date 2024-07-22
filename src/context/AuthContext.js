@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-// import { getAuth, onAuthStateChanged } from 'firebase/auth';
+// AuthContext.js
+import React, { createContext, useState, useContext } from 'react';
 
 const AuthContext = createContext();
 
@@ -9,34 +9,25 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    if(token){
-      setUser({token})
-    }
-    setLoading(false)
-    // const auth = getAuth();
-    // const unsubscribe = onAuthStateChanged(auth, (user) => {
-    //   setUser(user);
-    //   setLoading(false);
-    }, []);
-
-  const login = async (email, password) =>{
-    try{
-      const response = await fetch('http://localhost:5000/login',{
+  const login = async (email, password) => {
+    try {
+      const response = await fetch('http://localhost:5000/login', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
+
       const data = await response.json();
-      if(data.token){
+
+      if (response.ok) {
         localStorage.setItem('token', data.token);
-        setUser({ token: data.token });
+        setUser(data.user); // Assuming your response includes user data
         return true;
+      } else {
+        return false;
       }
-      return false;
-    } catch(error){
+    } catch (error) {
       console.error('Login error:', error);
       return false;
     }
@@ -45,13 +36,12 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-  }
+  };
 
   const value = {
     user,
     login,
     logout,
-    loading
   };
 
   return (

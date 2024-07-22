@@ -28,16 +28,11 @@ const ChatRoom = () => {
         setMessages(data);
       } catch (error) {
         console.error('Error fetching messages:', error);
-        // Handle error (e.g., show an error message to the user)
       }
     };
 
     fetchMessages();
-
-    // Optionally, set up polling to fetch messages periodically
-    const intervalId = setInterval(fetchMessages, 5000); // Fetch every 5 seconds
-
-    // Cleanup function
+    const intervalId = setInterval(fetchMessages, 5000);
     return () => clearInterval(intervalId);
   }, [user]);
 
@@ -51,7 +46,7 @@ const ChatRoom = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user.token}`
         },
-        body: JSON.stringify({ text: messageText })
+        body: JSON.stringify({ userId: user.id, text: messageText })
       });
 
       if (!response.ok) {
@@ -62,7 +57,6 @@ const ChatRoom = () => {
       setMessages(prevMessages => [...prevMessages, newMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      // Handle error (e.g., show an error message to the user)
     }
   }, [user]);
 
@@ -80,22 +74,16 @@ const ChatRoom = () => {
     return null;
   }
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-
   return (
     <div className="chat-room">
-    <div className="user-info">
-      {user.photoURL && <img src={user.photoURL} alt={user.username} width="50" height="50" />}
-      <span>{user.username}</span>
-      <button onClick={handleLogout}>Logout</button>
+      <div className="user-info">
+        <span>{user.username}</span>
+        <button onClick={handleLogout}>Logout</button>
+      </div>
+      <h1>Chat Room</h1>
+      <MessageList messages={messages} />
+      <MessageInput onSendMessage={handleSendMessage} />
     </div>
-    <h1>Chat Room</h1>
-    <MessageList messages={messages} />
-    <MessageInput onSendMessage={handleSendMessage} />
-  </div>
   );
 };
 
