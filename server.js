@@ -8,10 +8,13 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = 5000;
 
+const corsOptions = {
+  origin: 'https://master--userchattingapp.netlify.app/login', 
+  methods: ['GET', 'POST'], // Allow these methods
+  allowedHeaders: ['Content-Type'], // Allow these headers
+};
 // eslint-disable-next-line no-undef
-app.use(cors({
-  origin: 'http://localhost:3000' // or whatever port your React app is running on
-}));
+app.use(cors(corsOptions));
 app.use(express.json()); 
 
 // Connect to SQLite database
