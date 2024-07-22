@@ -8,13 +8,11 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = 5000;
 
-const corsOptions = {
-  origin: 'https://master--userchattingapp.netlify.app/login', 
-  methods: ['GET', 'POST'], // Allow these methods
-  allowedHeaders: ['Content-Type'], // Allow these headers
-};
-// eslint-disable-next-line no-undef
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: 'https://userchattingapp.netlify.app/login',
+  methods: ['GET', 'POST'], // Add other methods as needed
+  allowedHeaders: ['Content-Type'],
+}));
 app.use(express.json()); 
 
 // Connect to SQLite database
@@ -61,6 +59,7 @@ console.log('Received login request:', req.body)
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+const port = process.env.PORT || 5000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
