@@ -26,8 +26,8 @@ const Login = () => {
       console.log('Response:', response);
   
       if (!response.ok) {
-        throw new Error('Login failed');
-      }
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Login failed');      }
   
       const data = await response.json();
       localStorage.setItem('token', data.token);
@@ -36,31 +36,7 @@ const Login = () => {
       console.error('Login error:', error.message);
       setError(error.message || 'Login failed. Please check your credentials.');
     }
-      // const response = await fetch('http://localhost:5000/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
-
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.error || 'Login failed');
-      // }
-
-      // const data = await response.json();
       
-      // // Use the login function from AuthContext if available
-      // if (login) {
-      //   await login(data.token, data.user);
-      // } else {
-      //   localStorage.setItem('token', data.token);
-      // }
-
-      // navigate('/');
-  //  } catch (error) {
-  //     console.error('Login error:', error.message);
-  //     setError(error.message || 'Login failed. Please check your credentials.');
-  //   }
   };
 
   return (

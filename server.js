@@ -3,100 +3,128 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
 const path = require('path');
 
 const app = express();
 
-const CLIENT_URL = process.env.CLIENT_URL || 'https://userchattingapp.netlify.app';
-
-app.use(cors({
-  origin: [CLIENT_URL, 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-}));
-
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// Connect to SQLite database
-const dbPath = path.resolve(__dirname, './database.db');
-console.log('Database path:', dbPath);
+// Database setup
+const dbPath = path.resolve(__dirname, 'database.db');
 
 function initializeDatabase() {
   return new Promise((resolve, reject) => {
-    // Delete existing database file if it exists
-    if (fs.existsSync(dbPath)) {
-      fs.unlinkSync(dbPath);
-      console.log('Deleted existing database file');
-    }
-
-    // Create a new database
-    const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+    const db = new sqlite3.Database(dbPath, (err) => {
       if (err) {
-        console.error('Error creating database:', err.message);
-        return reject(err);
+        console.error('Error opening database:', err.message);
+        reject(err);
+      } else {
+        console.log('Connected to SQLite database');
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE,
+          username TEXT,
+          password TEXT
+        )`, (err) => {
+          if (err) {
+            console.error('Error creating users table:', err.message);
+            reject(err);
+          } else {
+            console.log('Users table created or already exists');
+            resolve(db);
+          }
+        });
       }
-      console.log('New database created successfully');
-
-      // Create users table
-      db.run(`CREATE TABLE users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE,
-        password TEXT
-      )`, (err) => {
-        if (err) {
-          console.error('Error creating users table:', err.message);
-          return reject(err);
-        }
-        console.log('Users table created successfully');
-        resolve(db);
-      });
     });
   });
 }
-//const SECRET_KEY = process.env.JWT_SECRET || 'App@2014!!';
 
-// const generateToken = (user) => {
-//   return jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: '1h' });
-// }
-// 3. Initialize the database and start the server
+// Login route
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  console.log('Received login request for email:', email);
+
+  app.locals.db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
+    if (err) {
+      console.error('Database error during login:', err.message);
+      return res.status(500).json({ error: 'Internal server error', details: err.message });
+    }
+    if (!user) {
+      console.log('User not found for email:', email);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    try {
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+
+      const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '1h' });
+      res.json({ token, user: { id: user.id, username: user.username } });
+    } catch (error) {
+      console.error('Error during password comparison:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+});
+
+// Registration route
+app.post('/register', async (req, res) => {
+  const { email, username, password } = req.body;
+  
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    app.locals.db.run('INSERT INTO users (email, username, password) VALUES (?, ?, ?)', 
+      [email, username, hashedPassword], 
+      function(err) {
+        if (err) {
+          console.error('Error registering new user:', err.message);
+          return res.status(500).json({ error: 'Error registering new user', details: err.message });
+        }
+        res.status(201).json({ message: 'User registered successfully', userId: this.lastID });
+      }
+    );
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
+// Function to add a test user
+function addTestUser() {
+  const testEmail = 'test@example.com';
+  const testUsername = 'testuser';
+  const testPassword = 'password123';
+
+  bcrypt.hash(testPassword, 10, (err, hashedPassword) => {
+    if (err) {
+      console.error('Error hashing test password:', err);
+      return;
+    }
+
+    app.locals.db.run('INSERT OR IGNORE INTO users (email, username, password) VALUES (?, ?, ?)', 
+      [testEmail, testUsername, hashedPassword], 
+      function(err) {
+        if (err) {
+          console.error('Error inserting test user:', err.message);
+        } else {
+          console.log('Test user inserted or already exists');
+        }
+      }
+    );
+  });
+}
+
+// Initialize database and start server
 initializeDatabase()
   .then((db) => {
-    // Store the database connection for use in routes
     app.locals.db = db;
-
-    // 4. Set up your routes with error handling
-    app.post('/login', (req, res) => {
-      const { email, password } = req.body;
-      console.log('Received login request for email:', email);
-
-      app.locals.db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
-        if (err) {
-          console.error('Database error during login:', err.message);
-          return res.status(500).json({ error: 'Internal server error' });
-        }
-        if (!user) {
-          console.log('User not found for email:', email);
-          return res.status(404).json({ error: 'User not found' });
-        }
-
-        try {
-          const passwordMatch = await bcrypt.compare(password, user.password);
-          if (!passwordMatch) {
-            return res.status(401).json({ error: 'Invalid password' });
-          }
-
-          const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '1h' });
-          res.json({ token, user: { id: user.id, username: user.username } });
-        } catch (error) {
-          console.error('Error during password comparison:', error);
-          res.status(500).json({ error: 'Internal server error' });
-        }
-      });
-    });
-
-    // Start the server
+    addTestUser();
+    
     const port = process.env.PORT || 5000;
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
