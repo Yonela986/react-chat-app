@@ -8,8 +8,13 @@ const path = require('path');
 const app = express();
 
 // Middleware
+
 app.use(cors());
 app.use(express.json());
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!', details: err.message });
+});
 
 // Database setup
 const dbPath = path.resolve(__dirname, 'database.db');
@@ -95,6 +100,10 @@ app.post('/login', (req, res) => {
 app.post('/register', async (req, res) => {
   const { email, username, password } = req.body;
   
+  if (!email || !username || !password) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -103,12 +112,15 @@ app.post('/register', async (req, res) => {
       function(err) {
         if (err) {
           console.error('Error registering new user:', err.message);
+          if (err.message.includes('UNIQUE constraint failed')) {
+            return res.status(409).json({ error: 'Email already exists' });
+          }
           return res.status(500).json({ error: 'Error registering new user', details: err.message });
         }
         res.status(201).json({ message: 'User registered successfully', userId: this.lastID });
       }
     );
-  } catch (error) {
+  }catch (error) {
     console.error('Error hashing password:', error);
     res.status(500).json({ error: 'Internal server error', details: error.message });
   }

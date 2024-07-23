@@ -14,18 +14,21 @@ const Register = () => {
     setError(null);
 
     try {
-      const response = await fetch('https://userchattingapp.netlify.app', {
-        method: 'POST',
+        const response = await fetch('http://localhost:5000/register', {
+            method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, username, password })
       });
+      const data = await response.json();
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Registration failed');
+        throw new Error(data.error || 'Registration failed');
+
       }
 
       // Registration successful
+      console.log('Registration successful:', data);
+
       navigate('/login');
     } catch (error) {
       console.error('Registration error:', error);
