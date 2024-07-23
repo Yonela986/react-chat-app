@@ -18,8 +18,12 @@ app.use(cors({
   credentials: true,
 }));
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something went wrong!');
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: 'Something went wrong!',
+    details: err.message,
+    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack
+  });
 });
 
 app.use(express.json());
@@ -32,8 +36,19 @@ console.log('Attempting to connect to database at:', dbPath);
 const db = new sqlite3.Database( dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
+    console.error('Full error object:', err);
   } else {
     console.log('Connected to SQLite database');
+    // Test the connection with a simple query
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (err, row) => {
+      if (err) {
+        console.error('Error querying database:', err);
+      } else if (row) {
+        console.log('Users table exists');
+      } else {
+        console.log('Users table does not exist');
+      }
+    });
   }
 });
 
@@ -73,7 +88,8 @@ console.log('Received login request for email:', email)
 
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Full error object:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
