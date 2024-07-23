@@ -66,6 +66,44 @@ function addUsernameColumn(db) {
     });
   });
 }
+// Registration route
+app.post('/register', async (req, res) => {
+  const { email, username, password } = req.body;
+  
+  if (!email || !username || !password) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    // Check if email already exists
+    const existingUser = await new Promise((resolve, reject) => {
+      app.locals.db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    app.locals.db.run('INSERT INTO users (email, username, password) VALUES (?, ?, ?)', 
+      [email, username, hashedPassword], 
+      function(err) {
+        if (err) {
+          console.error('Error registering new user:', err.message);
+          return res.status(500).json({ error: 'Error registering new user', details: err.message });
+
+        }
+        res.status(201).json({ message: 'User registered successfully', userId: this.lastID });
+      }
+    );
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
 
 // Login route
 app.post('/login', (req, res) => {
@@ -97,35 +135,7 @@ app.post('/login', (req, res) => {
   });
 });
 
-// Registration route
-app.post('/register', async (req, res) => {
-  const { email, username, password } = req.body;
-  
-  if (!email || !username || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
 
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    app.locals.db.run('INSERT INTO users (email, username, password) VALUES (?, ?, ?)', 
-      [email, username, hashedPassword], 
-      function(err) {
-        if (err) {
-          console.error('Error registering new user:', err.message);
-          if (err.message.includes('UNIQUE constraint failed')) {
-            return res.status(409).json({ error: 'Email already exists' });
-          }
-          return res.status(500).json({ error: 'Error registering new user', details: err.message });
-        }
-        res.status(201).json({ message: 'User registered successfully', userId: this.lastID });
-      }
-    );
-  }catch (error) {
-    console.error('Error hashing password:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
-  }
-});
 // Initialize database and start server
 initializeDatabase()
   .then((db) => {
