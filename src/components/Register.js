@@ -9,19 +9,21 @@ const Register = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+//   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
     try {
-        const response = await fetch(`${API_URL}/register`, {
+        const response = await fetch('http://localhost:5000/register', {
             method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, username, password })
-      });
-      const data = await response.json();
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, username, password}),
+        })
+        const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Registration failed');
