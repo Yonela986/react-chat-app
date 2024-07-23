@@ -41,6 +41,26 @@ function initializeDatabase() {
   });
 }
 
+function addUsernameColumn(db) {
+  return new Promise((resolve, reject) => {
+    db.run(`ALTER TABLE users ADD COLUMN username TEXT`, (err) => {
+      if (err) {
+        // If the error is because the column already exists, we can ignore it
+        if (err.message.includes('duplicate column name')) {
+          console.log('Username column already exists');
+          resolve();
+        } else {
+          console.error('Error adding username column:', err.message);
+          reject(err);
+        }
+      } else {
+        console.log('Added username column to users table');
+        resolve();
+      }
+    });
+  });
+}
+
 // Login route
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
@@ -93,6 +113,24 @@ app.post('/register', async (req, res) => {
     res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
+// Initialize database and start server
+initializeDatabase()
+  .then((db) => {
+    app.locals.db = db;
+    return addUsernameColumn(db);
+  })
+  .then(() => {
+    addTestUser();
+    
+    const port = process.env.PORT || 5000;
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });
 
 // Function to add a test user
 function addTestUser() {
@@ -118,22 +156,21 @@ function addTestUser() {
     );
   });
 }
-
-// Initialize database and start server
-initializeDatabase()
-  .then((db) => {
-    app.locals.db = db;
-    addTestUser();
+// // Initialize database and start server
+// initializeDatabase()
+//   .then((db) => {
+//     app.locals.db = db;
+//     addTestUser();
     
-    const port = process.env.PORT || 5000;
-    app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
-    });
-  })
-  .catch((err) => {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
-  });
+//     const port = process.env.PORT || 5000;
+//     app.listen(port, () => {
+//       console.log(`Server is running on port ${port}`);
+//     });
+//   })
+//   .catch((err) => {
+//     console.error('Failed to initialize database:', err);
+//     process.exit(1);
+//   });
 // // server.js
 // const express = require('express');
 // const sqlite3 = require('sqlite3').verbose();
