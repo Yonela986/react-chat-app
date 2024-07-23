@@ -13,7 +13,7 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  // const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 
   const handleSubmit = async (e) => {
@@ -22,21 +22,21 @@ const Login = () => {
 
     try {
       console.log('Attempting login with:', email, password);
-      const response = await fetch(`${API_URL}/register`, {
+      const response = await fetch('http://localhost:5000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
   
       console.log('Response:', response);
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Login failed');      }
-  
       const data = await response.json();
-      localStorage.setItem('token', data.token);
-      navigate('/');
+
+      if (!response.ok) {
+        // const errorData = await response.json();
+        throw new Error(data.error || 'Login failed');      }
+  console.log('Login successful:', data);
+     
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error.message);
       setError(error.message || 'Login failed. Please check your credentials.');
