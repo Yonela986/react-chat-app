@@ -9,8 +9,9 @@ const app = express();
 
 // Middleware
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: ['https://userchattingapp.netlify.app', 'http://localhost:3000']
+}));app.use(express.json());
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!', details: err.message });

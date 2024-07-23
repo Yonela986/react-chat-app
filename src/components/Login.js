@@ -13,13 +13,16 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
     try {
       console.log('Attempting login with:', email, password);
-      const response = await fetch('http://localhost:5000/login', {
+      const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
