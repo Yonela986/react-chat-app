@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ChatRoom from './components/ChatRoom';
 import Login from './components/Login';
+import Register from './components/Register';
+
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -15,6 +17,8 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+      <Route path="/register" element={<Register />} />
+
       <Route 
         path="/" 
         element={user ? <ChatRoom /> : <Navigate to="/login" />} 

@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { Container, Form, Button, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
 
-
-const Login = () => {
+const Register = () => {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  // eslint-disable-next-line no-unused-vars
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -18,32 +14,28 @@ const Login = () => {
     setError(null);
 
     try {
-      console.log('Attempting login with:', email, password);
-      const response = await fetch('http://localhost:5000/login', {
+      const response = await fetch('http://localhost:5000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, username, password })
       });
-  
-      console.log('Response:', response);
-  
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Login failed');      }
-  
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      navigate('/');
+        throw new Error(errorData.error || 'Registration failed');
+      }
+
+      // Registration successful
+      navigate('/login');
     } catch (error) {
-      console.error('Login error:', error.message);
-      setError(error.message || 'Login failed. Please check your credentials.');
+      console.error('Registration error:', error);
+      setError(error.message || 'Registration failed. Please try again.');
     }
-      
   };
 
   return (
     <Container className="d-flex flex-column align-items-center justify-content-center mt-5">
-      <h1 className="mb-4">Login</h1>
+      <h1 className="mb-4">Register</h1>
       <Form onSubmit={handleSubmit} className="w-100">
         {error && <Alert variant="danger">{error}</Alert>}
         <Form.Group className="mb-3">
@@ -57,6 +49,15 @@ const Login = () => {
         </Form.Group>
         <Form.Group className="mb-3">
           <Form.Control
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username"
+            required
+          />
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Control
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -64,13 +65,10 @@ const Login = () => {
             required
           />
         </Form.Group>
-        <Button variant="primary" type="submit">Login</Button>
+        <Button variant="primary" type="submit">Register</Button>
       </Form>
-      <p className="mt-3">
-  Already have an account? <Link to="/login">Login here</Link>
-</p>
     </Container>
   );
 };
 
-export default Login;
+export default Register;
